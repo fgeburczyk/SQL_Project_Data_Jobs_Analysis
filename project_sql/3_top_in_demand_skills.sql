@@ -2,16 +2,18 @@
 
 -- First up, I can perform a general analysis and find the most demanded 
 -- skills across the whole dataset (see the inner query). But let's say I
--- want to see the results for particular job roles. Then I can write the 
--- inner query into a subquery.
+-- want to see the results for particular job roles. Then I can narrow my
+-- focus by writing the inner query into a subquery and filtering to a
+-- particular role that interests me (here: 'Data Analyst'), and then finally   
+-- show the top 5 skills.
 
 SELECT
      skills
     ,SUM(no_of_skills) AS skill_count
 FROM (
     SELECT
-         t3.skills 
-        ,t1.job_title_short
+         t1.job_title_short 
+        ,t3.skills 
         ,COUNT(t1.job_id) as no_of_skills
     FROM job_postings_fact t1
     LEFT JOIN skills_job_dim t2
@@ -22,31 +24,17 @@ FROM (
         skills IS NOT NULL
     GROUP BY t3.skills, t1.job_title_short
     ORDER BY no_of_skills DESC
-)
+) inner_query
 WHERE job_title_short = 'Data Analyst'
-GROUP BY skills, job_title_short
+GROUP BY skills
 ORDER BY skill_count DESC
 LIMIT 5
 ;
 
--- SELECT
---     job_title_short,
---     skills,
---     SUM(no_of_skills) AS skill_count
--- FROM (
---     SELECT
---         t3.skills,
---         t1.job_title_short,
---         COUNT(t1.job_id) as no_of_skills
---     FROM job_postings_fact t1
---     LEFT JOIN skills_job_dim t2 ON t1.job_id = t2.job_id
---     LEFT JOIN skills_dim t3 ON t2.skill_id = t3.skill_id
---     WHERE skills IS NOT NULL
---     GROUP BY t3.skills, t1.job_title_short
-    
--- )
--- GROUP BY job_title_short, skills
--- ORDER BY job_title_short, skill_count DESC;
+-- If for any reason it was better for me to have an overview for of all of 
+-- the roles included in the data set, I can add a window function in the outer 
+-- query to divide the result set by job titles, store it as a CTE, and then  
+-- for each one display the top 5 most demanded skills:
 
 WITH ranked_skills AS (
     SELECT
